@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from django import template
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db.models.fields.files import FieldFile
 from django.utils.encoding import python_2_unicode_compatible
@@ -43,7 +44,7 @@ class BaseTag(object):
         if meta_content:
             self.meta_content = meta_content
 
-    def print_tag(self):
+    def print_tag(self, context):
         """
         Builds tag as text for printing
         :return: text
@@ -51,16 +52,24 @@ class BaseTag(object):
         if not isinstance(self, BaseTag) and not issubclass(self, BaseTag):
             raise TypeError("Tag must be of class simple-seo.tags.BaseTag")
 
+        html = ''
+        template_string = None
+
         if self.self_closed:
             if self.meta_name and self.meta_content:
-                return "<%s name=\"%s\" content=\"%s\" />" % (self.tag_name, self.meta_name, self.meta_content)
-            else:
-                return ""
-        else:
-            if self.tag_value:
-                return "<%s>%s</%s>" % (self.tag_name, self.tag_value, self.tag_name)
-            else:
-                return ""
+                template_string = '<{0} name="{1}" content="{2}" />'.format(
+                    self.tag_name, self.meta_name, self.meta_content
+                )
+        elif self.tag_value:
+            template_string = '<{0}>{1}</{2}>'.format(
+                self.tag_name, self.tag_value, self.tag_name
+            )
+
+        if template_string:
+            t = template.Template(template_string)
+            html = t.render(context)
+
+        return html
 
     def __str__(self):
         if self.self_closed:

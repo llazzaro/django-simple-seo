@@ -37,7 +37,9 @@ class MetadataNode(template.Node):
     @staticmethod
     def _build_prefix(context, view_name):
         lang = translation.get_language()
-        return SEO_CACHE_PREFIX + ':' + view_name + ':' + lang + ':' + context['request'].path
+        return '{0}:{1}:{2}:{3}'.format(
+            SEO_CACHE_PREFIX, view_name, lang, context['request'].path
+        )
 
     @staticmethod
     def _check_field_i18n(field):
@@ -53,7 +55,8 @@ class MetadataNode(template.Node):
         return False
 
     def render(self, context):
-        view_name = resolve(context['request'].path).url_name  # resolve view name
+        # resolve view name
+        view_name = resolve(context['request'].path).url_name
 
         # Check if metadata is in cache
         if SEO_USE_CACHE:
@@ -69,20 +72,34 @@ class MetadataNode(template.Node):
             for field in metadata._meta.fields:
                 if not self._check_field_i18n(field) and isinstance(
                         field,
-                        (TitleTagField, MetaTagField, KeywordsTagField, URLMetaTagField, ImageMetaTagField)):
-                    printed_tag = field.to_python(getattr(metadata, field.name)).print_tag()
+                        (
+                            TitleTagField,
+                            MetaTagField,
+                            KeywordsTagField,
+                            URLMetaTagField,
+                            ImageMetaTagField
+                        )
+                ):
+                    printed_tag = field.to_python(
+                        getattr(metadata, field.name)
+                    ).print_tag(context)
+
                     if printed_tag and printed_tag != "":
                         metadata_html += printed_tag + "\n"
                 else:
                     pass
             if metadata_html != "" and SEO_USE_CACHE:
-                cache.set(self._build_prefix(context, view_name), metadata_html, SEO_CACHE_TIMEOUT)
+                cache.set(
+                    self._build_prefix(context, view_name),
+                    metadata_html,
+                    SEO_CACHE_TIMEOUT
+                )
 
             if metadata_html:
                 return metadata_html
             else:
                 return ""
-        except seo_model.DoesNotExist as exc:
+        except seo_model.DoesNotExist:
             # Skipping error to avoid breaking the view
             log.debug("No metadata found for view %s" % view_name)
             return ""
@@ -91,4 +108,3 @@ class MetadataNode(template.Node):
 @register.tag
 def view_metadata(context, parser):
     return MetadataNode()
-
