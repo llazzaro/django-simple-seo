@@ -13,12 +13,15 @@ class BaseMetadataAdmin(ModelAdmin):
     """
     Overrides default admin to add autodiscovered views into a choice field
     """
-    list_display = ['view_name', 'title']
+    list_display = ['view_name']
     exclude = []
     form = BaseMetadataForm
 
     def formfield_for_dbfield(self, db_field, **kwargs):
-        formfield = super(BaseMetadataAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+        formfield = super(BaseMetadataAdmin, self).formfield_for_dbfield(
+            db_field,
+            **kwargs
+        )
         if db_field.name == 'title':
             formfield.widget = forms.Textarea(attrs=formfield.widget.attrs)
         if db_field.name == 'description':
