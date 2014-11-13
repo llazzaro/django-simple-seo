@@ -63,6 +63,8 @@ class BaseMetadata(models.Model):
     """
     view_name = models.CharField(
         max_length=250,
+        null=True,
+        blank=True
     )
     content_type = models.ForeignKey(
         'contenttypes.ContentType',
