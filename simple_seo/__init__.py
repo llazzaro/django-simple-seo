@@ -123,17 +123,25 @@ def load_view_names(urlconf=None):
     :return: generator
     """
     global _view_names_registry
+
     if len(_view_names_registry):
+        # return the already populated registry
         return _view_names_registry
 
+    # append empty value
+    _view_names_registry.append(('', '----'))
+
     if not urlconf:
+        # check urlconf
         try:
             urlconf = __import__(django_settings.ROOT_URLCONF, {}, {}, [''])
         except Exception as ie:
             raise ImproperlyConfigured("Error occurred while trying to load %s: %s"
                                        % (getattr(settings, 'ROOT_URLCONF', '\'NO settings.ROOT_URLCONF found\''), str(ie)))
 
+    # load views
     views = []
+
     for p in urlconf.urlpatterns:
         if isinstance(p, RegexURLPattern):
             _load_pattern(views, p)
@@ -141,9 +149,7 @@ def load_view_names(urlconf=None):
             _load_patterns(views, p.url_patterns, getattr(p, 'namespace', None))
         else:
             pass
+
     _view_names_registry.extend(views)
+
     return _view_names_registry
-
-
-
-

@@ -52,7 +52,7 @@ class BaseTag(object):
         if not isinstance(self, BaseTag) and not issubclass(self, BaseTag):
             raise TypeError("Tag must be of class simple-seo.tags.BaseTag")
 
-        html = ''
+        html = None
         template_string = None
 
         if self.self_closed:

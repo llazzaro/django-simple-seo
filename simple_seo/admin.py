@@ -2,11 +2,11 @@ from __future__ import print_function
 from django.contrib.admin import ModelAdmin
 from django import forms
 
-from .import load_view_names
+from . import load_view_names
 
 
 class BaseMetadataForm(forms.ModelForm):
-    view_name = forms.ChoiceField(choices=load_view_names())
+    view_name = forms.ChoiceField(choices=load_view_names(), required=False)
 
 
 class BaseMetadataAdmin(ModelAdmin):

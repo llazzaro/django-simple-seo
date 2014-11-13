@@ -56,6 +56,12 @@ class MetadataNode(template.Node):
 
         return False
 
+    @staticmethod
+    def _print_tag(metadata, field, context):
+        return field.to_python(
+            getattr(metadata, field.name)
+        ).print_tag(context)
+
     def __init__(self, instance=None):
         self.instance = template.Variable(instance) if instance else None
 
@@ -83,36 +89,58 @@ class MetadataNode(template.Node):
         if not metadata_html:
             seo_model = get_class_for_view(view_name)
 
+            # default metadata
             try:
-                metadatas = seo_model.objects.filter(view_name=view_name)
+                default_metadata = seo_model.objects.get(
+                    view_name='', content_type__isnull=True
+                )
+            except seo_model.DoesNotExist:
+                default_metadata = None
 
-                if content_type:
-                    metadatas = metadatas.filter(content_type=content_type)
+            # specific metadata
+            metadatas = seo_model.objects.filter(view_name=view_name)
 
-                # only get the last one
+            if content_type:
+                metadatas = metadatas.filter(content_type=content_type)
+
+            if len(metadatas):
+                # use the first of the found metadatas
                 metadata = metadatas[0]
-            except IndexError:
-                # Skipping error to avoid breaking the view
-                log.debug("No metadata found for view %s" % view_name)
             else:
-                metadata_html = ''
+                # or the default one if nothing is found
+                metadata = default_metadata
+                default_metadata = None
 
+            # generate html
+            metadata_html = ''
+
+            if metadata:
                 for field in metadata._meta.fields:
                     if not self._check_field_i18n(field) and isinstance(
-                            field,
-                            (
-                                TitleTagField,
-                                MetaTagField,
-                                KeywordsTagField,
-                                URLMetaTagField,
-                                ImageMetaTagField
-                            )
+                        field,
+                        (
+                            TitleTagField,
+                            MetaTagField,
+                            KeywordsTagField,
+                            URLMetaTagField,
+                            ImageMetaTagField
+                        )
                     ):
-                        printed_tag = field.to_python(
-                            getattr(metadata, field.name)
-                        ).print_tag(template.Context({'object': instance}))
+                        # put the current instance as the context for the tag
+                        tag_context = template.Context({'object': instance})
 
-                        if printed_tag and printed_tag != '':
+                        # print the tag
+                        printed_tag = self._print_tag(
+                            metadata, field, tag_context
+                        )
+
+                        if printed_tag is None and default_metadata:
+                            # try to get the default data k
+                            printed_tag = self._print_tag(
+                                default_metadata, field, tag_context
+                            )
+
+                        if printed_tag:
                             metadata_html += printed_tag + '\n'
                     else:
                         pass
