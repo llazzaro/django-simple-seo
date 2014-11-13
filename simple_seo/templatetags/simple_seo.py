@@ -3,8 +3,9 @@ from django.core.urlresolvers import resolve
 from django.core.cache import cache
 from django.utils import translation
 from django.conf import settings
+from django.contrib.contenttypes import models as contenttypes
 import logging
-from ..import get_class_for_view
+from .. import get_class_for_view
 
 from ..settings import (
     SEO_CACHE_PREFIX,
@@ -35,10 +36,11 @@ class MetadataNode(template.Node):
     """
 
     @staticmethod
-    def _build_prefix(context, view_name):
+    def _build_prefix(context, view_name, content_type):
         lang = translation.get_language()
-        return '{0}:{1}:{2}:{3}'.format(
-            SEO_CACHE_PREFIX, view_name, lang, context['request'].path
+        return '{0}:{1}:{2}:{3}:{4}'.format(
+            SEO_CACHE_PREFIX, view_name, content_type, lang,
+            context['request'].path
         )
 
     @staticmethod
@@ -54,57 +56,79 @@ class MetadataNode(template.Node):
 
         return False
 
+    def __init__(self, instance=None):
+        self.instance = template.Variable(instance) if instance else None
+
     def render(self, context):
+        metadata_html = None
+        content_type = None
+        instance = None
+
         # resolve view name
         view_name = resolve(context['request'].path).url_name
 
+        # resolve content type for the model
+        if self.instance:
+            instance = self.instance.resolve(context)
+            content_type = contenttypes.ContentType.objects.get_for_model(
+                type(instance)
+            )
+
         # Check if metadata is in cache
         if SEO_USE_CACHE:
-            metadata_html = cache.get(self._build_prefix(context, view_name))
-            if metadata_html:
-                log.debug("Cache metadata hit for view %s" % view_name)
-                return metadata_html
+            metadata_html = cache.get(
+                self._build_prefix(context, view_name, content_type)
+            )
 
-        seo_model = get_class_for_view(view_name)
-        try:
-            metadata = seo_model.objects.get(view_name=view_name)
-            metadata_html = ""
-            for field in metadata._meta.fields:
-                if not self._check_field_i18n(field) and isinstance(
-                        field,
-                        (
-                            TitleTagField,
-                            MetaTagField,
-                            KeywordsTagField,
-                            URLMetaTagField,
-                            ImageMetaTagField
-                        )
-                ):
-                    printed_tag = field.to_python(
-                        getattr(metadata, field.name)
-                    ).print_tag(context)
+        if not metadata_html:
+            seo_model = get_class_for_view(view_name)
 
-                    if printed_tag and printed_tag != "":
-                        metadata_html += printed_tag + "\n"
-                else:
-                    pass
-            if metadata_html != "" and SEO_USE_CACHE:
-                cache.set(
-                    self._build_prefix(context, view_name),
-                    metadata_html,
-                    SEO_CACHE_TIMEOUT
-                )
+            try:
+                metadatas = seo_model.objects.filter(view_name=view_name)
 
-            if metadata_html:
-                return metadata_html
+                if content_type:
+                    metadatas = metadatas.filter(content_type=content_type)
+
+                # only get the last one
+                metadata = metadatas[0]
+            except IndexError:
+                # Skipping error to avoid breaking the view
+                log.debug("No metadata found for view %s" % view_name)
             else:
-                return ""
-        except seo_model.DoesNotExist:
-            # Skipping error to avoid breaking the view
-            log.debug("No metadata found for view %s" % view_name)
-            return ""
+                metadata_html = ''
+
+                for field in metadata._meta.fields:
+                    if not self._check_field_i18n(field) and isinstance(
+                            field,
+                            (
+                                TitleTagField,
+                                MetaTagField,
+                                KeywordsTagField,
+                                URLMetaTagField,
+                                ImageMetaTagField
+                            )
+                    ):
+                        printed_tag = field.to_python(
+                            getattr(metadata, field.name)
+                        ).print_tag(template.Context({'object': instance}))
+
+                        if printed_tag and printed_tag != '':
+                            metadata_html += printed_tag + '\n'
+                    else:
+                        pass
+
+                if metadata_html != '' and SEO_USE_CACHE:
+                    cache.set(
+                        self._build_prefix(context, view_name),
+                        metadata_html,
+                        SEO_CACHE_TIMEOUT
+                    )
+
+        return metadata_html or ''
 
 
 @register.tag
-def view_metadata(context, parser):
-    return MetadataNode()
+def metadata(parser, token):
+    args = token.split_contents()[1:]
+
+    return MetadataNode(args[0] if len(args) else None)
