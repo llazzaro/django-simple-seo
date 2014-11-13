@@ -109,9 +109,7 @@ class TitleTagField(with_metaclass(models.SubfieldBase, BaseTagField)):
 
     def __init__(self, *args, **kwargs):
         kwargs['max_length'] = 68
-        kwargs['blank'] = False
         kwargs['db_index'] = False
-        kwargs['null'] = False
         super(TitleTagField, self).__init__(*args, **kwargs)
 
     def to_python(self, value):
@@ -130,9 +128,7 @@ class MetaTagField(with_metaclass(models.SubfieldBase, BaseTagField)):
     description = "Field for Storing <meta /> tag"
 
     def __init__(self, populate_from=None, *args, **kwargs):
-        kwargs['blank'] = True
         kwargs['db_index'] = False
-        kwargs['null'] = True
         kwargs['max_length'] = 255
         super(MetaTagField, self).__init__(populate_from=populate_from, *args, **kwargs)
 
@@ -157,9 +153,7 @@ class URLMetaTagField(with_metaclass(models.SubfieldBase, BaseURLTagField)):
     description = "Field for Storing <meta /> tag"
 
     def __init__(self, populate_from=None, *args, **kwargs):
-        kwargs['blank'] = True
         kwargs['db_index'] = False
-        kwargs['null'] = True
         super(URLMetaTagField, self).__init__(populate_from=populate_from, *args, **kwargs)
 
     def clean(self, value, model_instance):
@@ -194,9 +188,7 @@ class ImageMetaTagField(with_metaclass(models.SubfieldBase, BaseImageTagField)):
     description = "Field for Storing <meta /> tag"
 
     def __init__(self, populate_from=None, *args, **kwargs):
-        kwargs['blank'] = True
         kwargs['db_index'] = False
-        kwargs['null'] = True
         super(ImageMetaTagField, self).__init__(populate_from=populate_from, *args, **kwargs)
 
     def to_python(self, value):
@@ -222,9 +214,7 @@ class KeywordsTagField(with_metaclass(models.SubfieldBase, BaseTagField)):
     description = "Field for Storing <meta name='keywords' /> tag"
 
     def __init__(self, *args, **kwargs):
-        kwargs['blank'] = True
         kwargs['db_index'] = False
-        kwargs['null'] = True
         kwargs['max_length'] = 255
         self.name = 'keywords'
         super(KeywordsTagField, self).__init__(*args, **kwargs)

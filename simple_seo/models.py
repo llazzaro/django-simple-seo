@@ -89,10 +89,10 @@ class SimpleMetadataMixin(models.Model):
     """
     Mixin to include usual metadata tags.
     """
-    title = TitleTagField(null=False, blank=False)
-    keywords = KeywordsTagField(null=False, blank=False)
-    description = MetaTagField(null=False, blank=False)
-    author = MetaTagField(null=False, blank=False)
+    title = TitleTagField(null=True, blank=True)
+    keywords = KeywordsTagField(null=True, blank=True)
+    description = MetaTagField(null=True, blank=True)
+    author = MetaTagField(null=True, blank=True)
 
     class Meta:
         abstract = True
