@@ -63,12 +63,15 @@ class BaseMetadata(models.Model):
     """
     view_name = models.CharField(
         max_length=250,
-        null=False,
-        blank=False,
-        choices=(),
-        unique=True,
-        db_index=True
     )
+    content_type = models.ForeignKey(
+        'contenttypes.ContentType',
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        abstract = True
 
     def __init__(self, *args, **kwargs):
         super(BaseMetadata, self).__init__(*args, **kwargs)
@@ -76,8 +79,8 @@ class BaseMetadata(models.Model):
             _post_init_field_populate, sender=self.__class__
         )
 
-    class Meta:
-        abstract = False
+    def __unicode__(self):
+        return '{0} - {1}'.format(self.view_name, self.content_type)
 
 
 class SimpleMetadataMixin(models.Model):

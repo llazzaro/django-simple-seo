@@ -13,7 +13,7 @@ class BaseMetadataAdmin(ModelAdmin):
     """
     Overrides default admin to add autodiscovered views into a choice field
     """
-    list_display = ['view_name']
+    list_display = ['view_name', 'content_type']
     exclude = []
     form = BaseMetadataForm
 
