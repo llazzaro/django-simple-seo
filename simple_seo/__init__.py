@@ -128,9 +128,6 @@ def load_view_names(urlconf=None):
         # return the already populated registry
         return _view_names_registry
 
-    # append empty value
-    _view_names_registry.append(('', '----'))
-
     if not urlconf:
         # check urlconf
         try:
