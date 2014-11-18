@@ -84,12 +84,7 @@ class MetadataNode(template.Node):
             seo_model = get_class_for_view(view_name)
 
             # default metadata
-            try:
-                default_metadata = seo_model.objects.get(
-                    view_name='', content_type__isnull=True
-                )
-            except seo_model.DoesNotExist:
-                default_metadata = None
+            default_metadata = seo_model.objects.get_default()
 
             # specific metadata
             metadatas = seo_model.objects.filter(view_name=view_name)
@@ -108,48 +103,46 @@ class MetadataNode(template.Node):
             # generate html
             metadata_html = ''
 
-            if metadata:
-                # put the current instance as the context for the tag
-                tag_context = template.Context({'object': instance})
+            # put the current instance as the context for the tag
+            tag_context = template.Context({'object': instance})
 
-                for field in metadata._meta.fields:
-                    if not self._check_field_i18n(field) and isinstance(
-                        field,
-                        (
-                            TitleTagField,
-                            MetaTagField,
-                            KeywordsTagField,
-                            URLMetaTagField,
-                            ImageMetaTagField
-                        )
-                    ):
-                        if default_metadata:
-                            # add the default value to the context
-                            tag_context['default'] = str(
-                                field.to_python(
-                                    getattr(default_metadata, field.name)
-                                )
-                            )
-                            print 'default', tag_context['default']
-
-                        # print the tag
-                        printed_tag = field.to_python(
-                            getattr(metadata, field.name)
-                        ).print_tag(tag_context)
-
-                        if printed_tag:
-                            metadata_html += printed_tag + '\n'
-                    else:
-                        pass
-
-                if metadata_html != '' and SEO_USE_CACHE:
-                    cache.set(
-                        self._build_prefix(context, view_name),
-                        metadata_html,
-                        SEO_CACHE_TIMEOUT
+            for field in metadata._meta.fields:
+                if not self._check_field_i18n(field) and isinstance(
+                    field,
+                    (
+                        TitleTagField,
+                        MetaTagField,
+                        KeywordsTagField,
+                        URLMetaTagField,
+                        ImageMetaTagField
                     )
+                ):
+                    if default_metadata:
+                        # add the default value to the context
+                        tag_context['default'] = str(
+                            field.to_python(
+                                getattr(default_metadata, field.name)
+                            )
+                        )
 
-        return metadata_html or ''
+                    # print the tag
+                    printed_tag = field.to_python(
+                        getattr(metadata, field.name)
+                    ).print_tag(tag_context)
+
+                    if printed_tag:
+                        metadata_html += printed_tag + '\n'
+                else:
+                    pass
+
+            if metadata_html != '' and SEO_USE_CACHE:
+                cache.set(
+                    self._build_prefix(context, view_name, content_type),
+                    metadata_html,
+                    SEO_CACHE_TIMEOUT
+                )
+
+        return metadata_html
 
 
 @register.tag

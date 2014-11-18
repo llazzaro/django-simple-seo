@@ -57,6 +57,11 @@ def _post_init_field_populate(sender, instance, *args, **kwargs):
                             instance.save()
 
 
+class MetadataManager(models.Manager):
+    def get_default(self):
+        return self.get_or_create(view_name=None, content_type__isnull=True)[0]
+
+
 class BaseMetadata(models.Model):
     """
     Abstract Base Metadata Class
@@ -71,6 +76,8 @@ class BaseMetadata(models.Model):
         null=True,
         blank=True
     )
+
+    objects = MetadataManager()
 
     class Meta:
         abstract = True

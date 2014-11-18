@@ -24,9 +24,7 @@ class DefaultMetadataUpdateView(generic_views.UpdateView):
         return context
 
     def get_object(self):
-        return self.model.objects.get_or_create(
-            view_name='', content_type__isnull=True
-        )[0]
+        return self.model.objects.get_default()
 
     def get_form_class(self):
         return model_forms.modelform_factory(
@@ -89,10 +87,9 @@ class BaseMetadataAdmin(ModelAdmin):
     def queryset(self, request):
         queryset = super(BaseMetadataAdmin, self).queryset(request)
         queryset = queryset.exclude(
-            view_name='',
+            view_name__isnull=True,
             content_type__isnull=True
         )
-        print(queryset)
 
         return queryset
 
