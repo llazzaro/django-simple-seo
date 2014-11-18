@@ -56,12 +56,6 @@ class MetadataNode(template.Node):
 
         return False
 
-    @staticmethod
-    def _print_tag(metadata, field, context):
-        return field.to_python(
-            getattr(metadata, field.name)
-        ).print_tag(context)
-
     def __init__(self, instance=None):
         self.instance = template.Variable(instance) if instance else None
 
@@ -115,6 +109,9 @@ class MetadataNode(template.Node):
             metadata_html = ''
 
             if metadata:
+                # put the current instance as the context for the tag
+                tag_context = template.Context({'object': instance})
+
                 for field in metadata._meta.fields:
                     if not self._check_field_i18n(field) and isinstance(
                         field,
@@ -126,19 +123,19 @@ class MetadataNode(template.Node):
                             ImageMetaTagField
                         )
                     ):
-                        # put the current instance as the context for the tag
-                        tag_context = template.Context({'object': instance})
+                        if default_metadata:
+                            # add the default value to the context
+                            tag_context['default'] = str(
+                                field.to_python(
+                                    getattr(default_metadata, field.name)
+                                )
+                            )
+                            print 'default', tag_context['default']
 
                         # print the tag
-                        printed_tag = self._print_tag(
-                            metadata, field, tag_context
-                        )
-
-                        if printed_tag is None and default_metadata:
-                            # try to get the default data k
-                            printed_tag = self._print_tag(
-                                default_metadata, field, tag_context
-                            )
+                        printed_tag = field.to_python(
+                            getattr(metadata, field.name)
+                        ).print_tag(tag_context)
 
                         if printed_tag:
                             metadata_html += printed_tag + '\n'
