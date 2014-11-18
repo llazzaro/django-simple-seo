@@ -50,25 +50,36 @@ What's in django-simple-seo
 
  .. image:: assets/simple_seo_admin1.png
 
-What's NOT in django-simple-seo
+What's different on this fork?
 *******************************
 
- * Only implements view based backend. Maybe in future releases it will include Model and Path backend like in DjangoSeo. Contribute!
+* Added content type filtering to metadata models. This add an extra liberty to
+  modify the metadata served given an instance of a model in addition to the 
+  view name. This made more sense than having metadata per-model, since even
+  if a model is used in more than one view, the metadata you want to show
+  would vary according to the view it's shown on (IMO).
+* Allow to use django's template engine on metadata fields. This is related to
+  the previous point: when you give an instance of a model, you probably want
+  to use that instance to generate specific metadata.
+* Added a default metadata instance, which will be used when no other metadata
+  is found. It also can be referenced whitin a specific metadata content to
+  make for reusable common pieces of metadata (e.g. when you want your title to
+  always include some text + specific section text).
+* Modified admin to take into account the previous points.
+* Modified implementation for models. Instead of having a bunch of concrete
+  base models, only make use of a single abstract base model which includes the
+  required view_name and content_type and a bunch of mixins which you can
+  integrate into your own metadata model.
+
 
 Installation
 ------------
 
-You can use pip like this:
+Since this is a fork, it isn't on pypi, so you have to use pip with git:
 
 .. code-block:: sh
 
-    $ pip install django-simple-seo
-
-You can use pip with git master code instead of pypi version:
-
-.. code-block:: sh
-
-    $ pip install git+https://github.com/danigosa/django-simple-seo.git
+    $ pip install git+https://github.com/asermax/django-simple-seo.git
 
 Add to your settings:
 
@@ -93,17 +104,16 @@ Requeriments
 1. Create your SEO Model
 ------------------------
 
-Create a model subclassing the classes BaseMetada(title, author, description, keywords), OpenGraphMetada(includes facebook tags) or AllMetadata(Facebook and Twitter).
+Create a model subclassing BaseMetada, including any other mixin you would
+like to use or adding your own metadata fields.
 
 .. code-block:: python
 
-    from simple_seo.models import AllMetadata
+    from simple_seo import models as seo_models
 
 
-    class MyMetadata(AllMetadata):
-        """
-        My Seo Model
-        """
+    class Metadata(seo_models.SimpleMetadataMixin, seo_models.BaseMetadata):
+        pass
 
 
 2. Synchronize your DB
@@ -236,12 +246,21 @@ Just include this template tag in your **<head>** section, no more template code
     <html>
     <head lang="en">
         <meta charset="UTF-8">
-        {% view_metadata %}
+        {% metadata %}
     </head>
     <body>
     TEST
     </body>
     </html>
+
+
+If you want to use a instance specific metadata, pass it to the templatetag as
+a parameter
+
+.. code-block:: html
+    
+    {% metadata instance %}
+
 
 7. Extend/Override default behaviour
 ------------------------------------
@@ -252,39 +271,27 @@ Just override **og_image** attribute. You can find all base models in **simple_s
 
 .. code-block:: python
 
-    from simple_seo.fields import URLMetaTagField, MetaTagField
-    from simple_seo.models import AllMetadata
-    from simple_seo import register
+    from simple_seo import fields as seo_fields, models as seo_models
 
 
-    class MyMetadata(AllMetadata):
-        """
-        My Seo Model
-        """
-        og_image = URLMetaTagField(name="og:image")  # Overrides default og:image field
-        another_meta_tag = MetaTagField(name="myvariable", max_length="25")  #  Creates a new custom meta tag for the views
-
-    # Register SEO Model
-    register(MyMetadata)
+    class Metadata(seo_models.SimpleMetadataMixin,
+                   seo_models.OpenGraphMetadataMixin,
+                   seo_models.TwitterMetadataMixin
+                   seo_models.BaseMetadata):
+        og_image = seo_fields.URLMetaTagField(name="og:image")  # Overrides default og:image field
+        another_meta_tag = seo_fields.MetaTagField(name="myvariable", max_length="25")  #  Creates a new custom meta tag for the views
 
 *"I only want Facebook tags, and I prefer to add all fields by hand, no handy population, like a boss"*
 
 .. code-block:: python
 
-    from simple_seo.fields import URLMetaTagField, MetaTagField
-    from simple_seo.models import OpenGraphMetadata
-    from simple_seo import register
+    from simple_seo import fields as seo_fields, models as seo_models
 
 
-    class MyOpenGraphMetadata(OpenGraphMetadata):
-        """
-        My OpenGraph Model
-        """
-        og_title = MetaTagField(name="og:title", populate_from=None)  # Overrides default og:title field
-        og_description = MetaTagField(name="og:description", populate_from=None)  # Overrides default og:description field
-
-    # Register SEO Model
-    register(MyMetadata)
+    class OpenGraphMetadata(seo_models.OpenGraphMetadataMixin,
+                            seo_models.BaseMetadata):
+        og_title = seo_fields.MetaTagField(name="og:title", populate_from=None)  # Overrides default og:title field
+        og_description = seo_fields.MetaTagField(name="og:description", populate_from=None)  # Overrides default og:description field
 
 
 8. Cache Settings
@@ -315,22 +322,17 @@ Complete SEO model translated:
 
 .. code-block:: python
 
-    from simple_seo.models import AllMetadata
-    from simple_seo import register
+    from simple_seo models as seo_models
     import vinaigrette
 
 
-    class SiteMetadata(AllMetadata):
-        """
-        Site Metadata
-        """
+    class Metadata(seo_models.SimpleMetadataMixin,
+                   seo_models.OpenGraphMetadataMixin,
+                   seo_models.TwitterMetadataMixin
+                   seo_models.BaseMetadata):
 
         class Meta:
             app_label = 'web'
-
-    # Register SEO Model
-    register(SiteMetadata)
-
 
     vinaigrette.register(
         SiteMetadata,
