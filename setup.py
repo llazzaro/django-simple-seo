@@ -10,15 +10,16 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-simple-seo',
-    version='2.0.0',
+    version='2.0.1',
     packages=['simple_seo', 'simple_seo.templatetags'],
+    package_data={'simple_seo': ['templates/admin/*.html']},
     include_package_data=True,
     license='MIT License',  # example license
     description='Simple SEO Module for Django',
     long_description=README,
-    url='https://github.com/danigosa/django-simple-seo',
-    author='danigosa',
-    author_email='danigosa@gmail.com',
+    url='https://github.com/asermax/django-simple-seo',
+    author='asermax',
+    author_email='asermax@gmail.com',
     install_requires=[
 
     ],
