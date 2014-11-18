@@ -28,10 +28,10 @@
     {% endif %}
     <fieldset class="module aligned">
       {% for field in form %}
-        <div class="form-row{% if form.errors %} errors{% endif %}{% if field.name %} field-{{ field.name }}{% endif %}">
+        <div class="form-row{% if field.errors %} errors{% endif %}{% if field.name %} field-{{ field.name }}{% endif %}">
           {{ field.errors }}
           <div>
-            <label for="id_{{ field.html_name }}">{{ field.label }}:</label>
+            <label for="id_{{ field.html_name }}" {% if field.field.required %}class="required"{% endif %}>{{ field.label }}:</label>
             {% if field.is_readonly %}
               <p>{{ field.value }}</p>
             {% else %}
