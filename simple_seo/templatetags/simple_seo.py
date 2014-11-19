@@ -101,7 +101,7 @@ class MetadataNode(template.Node):
                 default_metadata = None
 
             # generate html
-            metadata_html = ''
+            metadata_html = u''
 
             # put the current instance as the context for the tag
             tag_context = template.Context({'object': instance})
@@ -119,7 +119,7 @@ class MetadataNode(template.Node):
                 ):
                     if default_metadata:
                         # add the default value to the context
-                        tag_context['default'] = str(
+                        tag_context['default'] = unicode(
                             field.to_python(
                                 getattr(default_metadata, field.name)
                             )
@@ -131,11 +131,11 @@ class MetadataNode(template.Node):
                     ).print_tag(tag_context)
 
                     if printed_tag:
-                        metadata_html += printed_tag + '\n'
+                        metadata_html += printed_tag + u'\n'
                 else:
                     pass
 
-            if metadata_html != '' and SEO_USE_CACHE:
+            if metadata_html != u'' and SEO_USE_CACHE:
                 cache.set(
                     self._build_prefix(context, view_name, content_type),
                     metadata_html,
