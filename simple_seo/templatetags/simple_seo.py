@@ -65,7 +65,7 @@ class MetadataNode(template.Node):
         instance = None
 
         # resolve view name
-        view_name = resolve(context['request'].path).url_name
+        view_name = resolve(context['request'].path).view_name
 
         # resolve content type for the model
         if self.instance:
