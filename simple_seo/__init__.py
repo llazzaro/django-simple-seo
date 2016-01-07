@@ -1,5 +1,5 @@
 from __future__ import print_function
-from django.db.models.loading import get_model
+from django.apps import apps
 from django.utils.six import iteritems
 from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import RegexURLResolver, RegexURLPattern
@@ -45,7 +45,7 @@ def _get_class_from_name(model_name):
     :return:
     """
     _app_label, _model_name = registry[0].split('.')
-    return get_model(_app_label, _model_name)
+    return apps.get_model(_app_label, _model_name)
 
 
 def get_class_for_view(view):
@@ -134,7 +134,7 @@ def load_view_names(urlconf=None):
             urlconf = __import__(django_settings.ROOT_URLCONF, {}, {}, [''])
         except Exception as ie:
             raise ImproperlyConfigured("Error occurred while trying to load %s: %s"
-                                       % (getattr(settings, 'ROOT_URLCONF', '\'NO settings.ROOT_URLCONF found\''), str(ie)))
+                                       % (getattr(django_settings, 'ROOT_URLCONF', '\'NO settings.ROOT_URLCONF found\''), str(ie)))
 
     # load views
     views = []
@@ -148,5 +148,4 @@ def load_view_names(urlconf=None):
             pass
 
     _view_names_registry.extend(views)
-
     return _view_names_registry

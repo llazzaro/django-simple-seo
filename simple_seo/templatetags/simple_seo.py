@@ -51,7 +51,7 @@ class MetadataNode(template.Node):
         if not getattr(settings, 'USE_I18N', None) or field is None:
             return False
         for lang in settings.LANGUAGES:
-            if '_'+lang[0] in field.name:
+            if '_' + lang[0] in field.name:
                 return True
 
         return False
